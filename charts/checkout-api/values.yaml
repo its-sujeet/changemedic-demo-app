@@ -1,0 +1,29 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/its-sujeet/changemedic-demo-app
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+appVersion: "1.0.0"
+
+# Failure injection knobs — this is the "real world" part: the pods stay Ready
+# while traffic fails, which is exactly the class ChangeMedic is built for.
+failRate: "0"
+latencyMs: "0"
+ready: "true"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+podAnnotations: {}

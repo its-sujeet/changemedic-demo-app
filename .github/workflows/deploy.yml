@@ -1,0 +1,73 @@
+name: deploy + report to ChangeMedic
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+  RELEASE: checkout-api
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        run: |
+          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:1.0.0" .
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:1.0.0"
+
+      - name: Set up kubectl + Helm
+        uses: azure/setup-kubectl@v4
+      - uses: azure/setup-helm@v4
+
+      - name: Deploy to the cluster
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+          NAMESPACE: ${{ vars.CM_NAMESPACE || 'demo' }}
+        run: |
+          mkdir -p ~/.kube
+          printf '%s' "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+          helm upgrade --install "$RELEASE" charts/checkout-api \
+            --namespace "$NAMESPACE" --create-namespace \
+            --set image.repository="$IMAGE" \
+            --set image.tag="${{ github.sha }}" \
+            --set image.pullPolicy=IfNotPresent \
+            --set appVersion="${{ github.sha }}" \
+            --wait --timeout 3m
+          echo "REVISION=$(helm history "$RELEASE" -n "$NAMESPACE" -o json | python3 -c 'import json,sys; print(json.load(sys.stdin)[-1]["revision"])')" >> "$GITHUB_ENV"
+
+      - name: Report the release to ChangeMedic
+        env:
+          CM_URL: ${{ secrets.CM_URL }}
+          NAMESPACE: ${{ vars.CM_NAMESPACE || 'demo' }}
+        run: |
+          curl -fsS -X POST "$CM_URL/webhooks/deploy" \
+            -H 'content-type: application/json' \
+            -d "$(python3 - <<'PY'
+          import json, os
+          print(json.dumps({
+            "project": os.getenv("CM_PROJECT", "checkout-api-demo"),
+            "service": "checkout-api",
+            "namespace": os.getenv("NAMESPACE", "demo"),
+            "image": os.getenv("IMAGE") + ":" + os.getenv("GITHUB_SHA"),
+            "commit_sha": os.getenv("GITHUB_SHA"),
+            "helm_revision": int(os.getenv("REVISION", "1")),
+            "deployed_by": "github-actions",
+          }))
+          PY
+          )"

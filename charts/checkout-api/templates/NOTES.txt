@@ -1,0 +1,9 @@
+checkout-api is installed as release {{ .Release.Name }} in {{ .Release.Namespace }}.
+
+Probe it with:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "checkout.fullname" . }} 8001:80
+  curl -X POST localhost:8001/charge -H 'content-type: application/json' -d '{"amount":5000}'
+
+Break it with:
+  helm upgrade {{ .Release.Name }} charts/checkout-api -n {{ .Release.Namespace }} \
+    --reuse-values --set failRate=1
