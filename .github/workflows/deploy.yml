@@ -1,8 +1,9 @@
 name: deploy + report to ChangeMedic
 
 on:
-  push:
-    branches: [main]
+  # ChangeMedic starts this workflow with workflow_dispatch when it receives a
+  # signed GitHub push. The CI workflow still runs on every push.
+  workflow_dispatch:
 
 permissions:
   contents: read
