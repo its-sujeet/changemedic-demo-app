@@ -1,5 +1,9 @@
 replicaCount: 1
 
+# Set to "checkout-api" so the Kubernetes Service name matches the project's
+# `service` field in ChangeMedic.
+fullnameOverride: ""
+
 image:
   repository: ghcr.io/its-sujeet/changemedic-demo-app
   tag: "1.0.0"

@@ -49,6 +49,7 @@ jobs:
             --set image.tag="${{ github.sha }}" \
             --set image.pullPolicy=IfNotPresent \
             --set appVersion="${{ github.sha }}" \
+            --set fullnameOverride=checkout-api \
             --wait --timeout 3m
           echo "REVISION=$(helm history "$RELEASE" -n "$NAMESPACE" -o json | python3 -c 'import json,sys; print(json.load(sys.stdin)[-1]["revision"])')" >> "$GITHUB_ENV"
 
