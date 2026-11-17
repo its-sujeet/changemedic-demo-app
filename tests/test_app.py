@@ -24,3 +24,12 @@ def test_injected_failure(monkeypatch):
     c = TestClient(app)
     monkeypatch.setenv("FAIL_RATE", "1")
     assert c.post("/charge", json={"amount": 5000}).status_code == 500
+
+
+def test_control_endpoint_injects_failure():
+    c = TestClient(app)
+    r = c.post("/control", json={"fail_rate": 1, "latency_ms": 0, "ready": "true"})
+    assert r.status_code == 200
+    assert r.json()["fail_rate"] == 1.0
+    assert c.post("/charge", json={"amount": 1}).status_code == 500
+    c.post("/control", json={"fail_rate": 0})

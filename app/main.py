@@ -76,6 +76,23 @@ def charge(body: dict):
     return {"ok": True, "amount": amount, "currency": "USD", "version": os.getenv("APP_VERSION", "1.0.0")}
 
 
+@app.post("/control")
+def control(body: dict):
+    """Runtime failure injection for a demo control panel.
+
+    ChangeMedic's admin console calls this to break or heal the app without a
+    redeploy, so an incident can be demonstrated in seconds.
+    """
+    for key in ("FAIL_RATE", "LATENCY_MS", "READY"):
+        if key.lower() in body:
+            os.environ[key] = str(body[key.lower()])
+    return {
+        "fail_rate": env_float("FAIL_RATE", 0),
+        "latency_ms": env_float("LATENCY_MS", 0),
+        "ready": os.getenv("READY", "true"),
+    }
+
+
 @app.get("/metrics")
 def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
