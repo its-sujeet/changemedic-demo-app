@@ -122,3 +122,5 @@ Repository secrets/vars used by `.github/workflows/deploy.yml`:
 Every push to `main` then builds the image, deploys it and reports the release to
 ChangeMedic through `/webhooks/deploy`. The GitHub webhook is separate: it records
 the commit and can start this same workflow with `workflow_dispatch`.
+
+Deploy is activated by ChangeMedic on push (workflow_dispatch). Live demo on EC2 k3s.
