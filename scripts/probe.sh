@@ -14,9 +14,10 @@ declare -A codes
 for _ in $(seq 1 "$REQUESTS"); do
   args=(-s -o /dev/null -w '%{http_code}' -X "$PROBE_METHOD" -H 'content-type: application/json')
   [[ "$PROBE_METHOD" != "GET" ]] && args+=(--data "$PROBE_BODY")
-  code="$(curl "${args[@]}" "$APP_URL$PROBE_PATH" || echo 000)"
+  code="$(curl "${args[@]}" "$APP_URL$PROBE_PATH" || true)"
+  code="${code: -3}"
   codes[$code]=$(( ${codes[$code]:-0} + 1 ))
-  if [[ "$code" =~ ^[0-9]+$ ]] && (( code < EXPECT_BELOW )); then ok=$((ok+1)); else bad=$((bad+1)); fi
+  if [[ "$code" =~ ^[0-9]{3}$ && "$code" != "000" ]] && (( 10#$code < EXPECT_BELOW )); then ok=$((ok+1)); else bad=$((bad+1)); fi
 done
 for code in "${!codes[@]}"; do echo "$code: ${codes[$code]}"; done | sort
 echo "healthy=$ok failed=$bad of $REQUESTS"

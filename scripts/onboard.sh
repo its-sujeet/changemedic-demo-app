@@ -37,7 +37,11 @@ print(json.dumps({
 PY
 )"
 echo "==> register $PROJECT ($SERVICE/$NAMESPACE)"
-cm_api PUT "/projects/$PROJECT" "$payload" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("id") or d)'
+created="$(cm_api POST "/projects" "$payload")"
+if printf '%s' "$created" | grep -q 'already exists'; then
+  created="$(cm_api PUT "/projects/$PROJECT" "$payload")"
+fi
+printf '%s' "$created" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("id") or d)'
 
 if [[ -n "${GITHUB_TOKEN:-}" || "${CONNECT_GITHUB:-false}" == "true" ]]; then
   gh_payload="$(python3 - <<'PY'

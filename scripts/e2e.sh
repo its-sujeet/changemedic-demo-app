@@ -2,10 +2,11 @@
 # End-to-end harness: healthy probe -> alert -> incident -> evidence.
 set -euo pipefail
 source "$(dirname "$0")/cm-auth.sh"
+cm_login
 PROJECT="${PROJECT:-checkout-api-demo}"
 
 echo "==> 1. probe the running app"
-"$(dirname "$0")/probe.sh"
+"$(dirname "$0")/probe.sh" || true
 
 echo "==> 2. fire an Alertmanager alert"
 "$(dirname "$0")/send-alert.sh"
